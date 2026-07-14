@@ -2,6 +2,7 @@
 // Simulates a C++ object (Itanium ABI), then hooks its virtual method.
 
 use std::ffi::c_void;
+use std::sync::OnceLock;
 use vtable_hook::{RawVTable, Method, hook::copy::raw::RawHook};
 
 type VirtualFn = unsafe extern "C" fn(this: *mut c_void) -> i32;
@@ -24,12 +25,11 @@ fn make_object() -> Box<Object> {
 unsafe extern "C" fn my_hook(this: *mut c_void) -> i32 {
     unsafe {
         eprintln!("[hook] intercepted call on obj={this:p}");
-        let orig: VirtualFn = std::mem::transmute(ORIG.load(std::sync::atomic::Ordering::Relaxed));
-        orig(this)
+        ORIG.get().unwrap()(this)
     }
 }
 
-static ORIG: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static ORIG: OnceLock<VirtualFn> = OnceLock::new();
 
 fn main() {
     unsafe {
@@ -47,9 +47,8 @@ fn main() {
         let vptr_field = obj_ptr as *mut RawVTable;
         let mut hook = RawHook::new(vptr_field, None);
 
-        // get_original() eliminates the manual ORIG static pattern
-        let orig = hook.get_original(0).unwrap();
-        ORIG.store(orig as usize, std::sync::atomic::Ordering::Relaxed);
+        let orig: VirtualFn = std::mem::transmute(hook.get_original(0).unwrap());
+        ORIG.set(orig).ok();
 
         // hook() = replace_method + enable in one call
         hook.hook(0, my_hook as Method);
