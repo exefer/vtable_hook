@@ -34,7 +34,7 @@ static ORIG: OnceLock<VirtualFn> = OnceLock::new();
 fn main() {
     unsafe {
         let mut obj = make_object();
-        let obj_ptr: *mut c_void = &mut *obj as *mut Object as *mut c_void;
+        let obj_ptr = &raw mut *obj as *mut c_void;
 
         let call_slot = |idx: usize| -> i32 {
             let vtable_ptr = obj.vptr as *const VirtualFn;
