@@ -4,8 +4,6 @@
 use std::ffi::c_void;
 use vtable_hook::{RawVTable, Method, hook::copy::raw::RawHook};
 
-// --- Simulate a C++ object ---
-
 type VirtualFn = unsafe extern "C" fn(this: *mut c_void) -> i32;
 
 static VTABLE: [VirtualFn; 2] = [original_fn, null_fn];
@@ -22,8 +20,6 @@ struct Object {
 fn make_object() -> Box<Object> {
     Box::new(Object { vptr: &VTABLE, _value: 42 })
 }
-
-// --- Hook ---
 
 unsafe extern "C" fn my_hook(this: *mut c_void) -> i32 {
     unsafe {
