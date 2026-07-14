@@ -1,9 +1,24 @@
+//! Hook C++ virtual tables at runtime by cloning and replacing the vtable pointer.
+//!
+//! Two hook types:
+//! - `Hook<T>` - lifetime-safe, auto-disables on drop.
+//! - `RawHook` - raw pointer based, caller manages safety.
+
 pub mod hook;
 
+/// Pointer to the first entry of a vtable array.
+///
+/// Dereferencing yields a `Method`. The vtable may be null-terminated
+/// (zero entry marks the end) or have a known fixed size.
 pub type RawVTable = *const Method;
+/// Opaque function pointer. Cast via `transmute` to the real signature.
 pub type Method = *const ();
 
 #[derive(Debug, Clone)]
+/// A vtable snapshot: a pointer to its first entry and the entry count.
+///
+/// Created from a `RawVTable` either by counting null-terminated entries
+/// (`new`) or by supplying an explicit size (`new_with_size`).
 pub struct VTable {
     pub begin: RawVTable,
     pub size: usize,

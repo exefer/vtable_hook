@@ -1,6 +1,15 @@
+/// Copy-based vtable hooking: clone the target vtable, patch the clone,
+/// then swap the object's vptr to point at the patched copy.
+///
+/// The raw submodule provides the core `RawHook`. This module wraps it in
+/// a lifetime-safe `Hook<T>` that auto-disables on drop.
 pub mod raw;
 
 #[derive(Debug)]
+/// A vtable hook tied to a specific object's lifetime.
+///
+/// Automatically disables the hook (restores the original vptr) when
+/// `Hook` is dropped. Methods delegate to the inner `RawHook`.
 pub struct Hook<'a, T> {
     pub item: &'a mut T,
     raw: raw::RawHook,

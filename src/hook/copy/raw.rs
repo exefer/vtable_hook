@@ -1,3 +1,11 @@
+/// Low-level vtable hook handle. The caller is responsible for ensuring
+/// the target object outlives this handle.
+///
+/// On construction, the original vtable is cloned. Methods can be replaced
+/// in the clone, and `enable` swaps the object's vptr to point at it.
+/// `disable` restores the original vptr. The clone is freed on drop but
+/// the vptr is NOT restored - the caller must `disable` first or let
+/// `Hook<T>` handle it.
 #[derive(Debug)]
 pub struct RawHook {
     struct_vtable_field_ptr: *mut crate::RawVTable,
