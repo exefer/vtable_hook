@@ -59,13 +59,13 @@ impl<'a, T> Hook<'a, T> {
     /// # Safety
     /// `index` must be within the vtable bounds.
     /// `hook_fn` must match the calling convention of the original method.
-    pub unsafe fn hook(&mut self, index: usize, hook_fn: crate::Method) -> Option<()> {
+    pub unsafe fn hook(&mut self, index: usize, hook_fn: crate::Method) {
         unsafe { self.raw.hook(index, hook_fn) }
     }
 
     /// # Safety
     /// `index` must be within the vtable bounds.
-    pub unsafe fn unhook(&mut self, index: usize) -> Option<()> {
+    pub unsafe fn unhook(&mut self, index: usize) {
         unsafe { self.raw.unhook(index) }
     }
 
@@ -77,13 +77,13 @@ impl<'a, T> Hook<'a, T> {
 
     /// # Safety
     /// `index` must be within the vtable bounds.
-    pub unsafe fn replace_method(&mut self, index: usize, hook_fn: crate::Method) -> Option<()> {
+    pub unsafe fn replace_method(&mut self, index: usize, hook_fn: crate::Method) {
         unsafe { self.raw.replace_method(index, hook_fn) }
     }
 
     /// # Safety
     /// `index` must be within the vtable bounds.
-    pub unsafe fn restore_method(&mut self, index: usize) -> Option<()> {
+    pub unsafe fn restore_method(&mut self, index: usize) {
         unsafe { self.raw.restore_method(index) }
     }
 

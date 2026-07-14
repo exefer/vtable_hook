@@ -78,18 +78,17 @@ impl RawHook {
     /// # Safety
     /// `index` must be within bounds of the vtable.
     /// `hook_fn` must match the calling convention of the original method.
-    pub unsafe fn hook(&mut self, index: usize, hook_fn: crate::Method) -> Option<()> {
+    pub unsafe fn hook(&mut self, index: usize, hook_fn: crate::Method) {
         unsafe { self.replace_method(index, hook_fn) };
         unsafe { self.enable() };
-        Some(())
     }
 
-    /// Restore the original method at `index` and disable if all restored.
+    /// Restore the original method at `index`.
     ///
     /// # Safety
     /// `index` must be within bounds of the original vtable.
-    pub unsafe fn unhook(&mut self, index: usize) -> Option<()> {
-        unsafe { self.restore_method(index) }
+    pub unsafe fn unhook(&mut self, index: usize) {
+        unsafe { self.restore_method(index) };
     }
 
     /// Restore all original methods and disable the hook.
@@ -103,21 +102,14 @@ impl RawHook {
 
     /// # Safety
     /// `index` must be within bounds of the original vtable.
-    pub unsafe fn replace_method(&mut self, index: usize, hook_fn: crate::Method) -> Option<()> {
-        let item = self.patched_vtable.get_mut(index)?;
-        *item = hook_fn;
-
-        Some(())
+    pub unsafe fn replace_method(&mut self, index: usize, hook_fn: crate::Method) {
+        self.patched_vtable[index] = hook_fn;
     }
 
     /// # Safety
     /// `index` must be within bounds of the original vtable.
-    pub unsafe fn restore_method(&mut self, index: usize) -> Option<()> {
-        let item = self.patched_vtable.get_mut(index)?;
-        let original_method = unsafe { self.original_vtable.as_slice() }.get(index)?;
-        *item = *original_method;
-
-        Some(())
+    pub unsafe fn restore_method(&mut self, index: usize) {
+        self.patched_vtable[index] = unsafe { self.original_vtable.as_slice() }[index];
     }
 
     /// # Safety
