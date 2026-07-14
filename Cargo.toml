@@ -1,0 +1,9 @@
+[package]
+name = "vtable_hook"
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.85.1"
+keywords = ["vtable", "hooking"]
+description = "Runtime C++ vtable hooking library"
+repository = "https://github.com/exefer/vtable_hook"
+license = "MIT"
