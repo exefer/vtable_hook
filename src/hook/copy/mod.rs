@@ -1,3 +1,5 @@
+use std::ffi::c_void;
+
 /// Copy-based vtable hooking: clone the target vtable, patch the clone,
 /// then swap the object's vptr to point at the patched copy.
 ///
@@ -59,10 +61,16 @@ impl<'a, T> Hook<'a, T> {
         unsafe { self.raw.disable() }
     }
 
+    /// # Panics
+    /// If `index` is out of bounds.
+    pub fn original(&self, index: usize) -> *const c_void {
+        self.raw.original(index)
+    }
+
     /// # Safety
-    /// `index` must be within the vtable bounds.
-    pub unsafe fn get_original(&self, index: usize) -> Option<crate::Method> {
-        unsafe { self.raw.get_original(index) }
+    /// `F` must be a function pointer type (same size as `*const ()`).
+    pub unsafe fn original_fn<F>(&self, index: usize) -> F {
+        unsafe { self.raw.original_fn(index) }
     }
 
     /// # Safety

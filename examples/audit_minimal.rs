@@ -47,8 +47,7 @@ fn main() {
         let vptr_field = obj_ptr as *mut RawVTable;
         let mut hook = RawHook::new(vptr_field, None);
 
-        let orig: VirtualFn = std::mem::transmute(hook.get_original(0).unwrap());
-        ORIG.set(orig).ok();
+        ORIG.set(hook.original_fn::<VirtualFn>(0)).ok();
 
         // hook() = replace_method + enable in one call
         hook.hook(0, my_hook as Method);

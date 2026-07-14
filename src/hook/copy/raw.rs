@@ -1,3 +1,5 @@
+use std::ffi::c_void;
+
 /// Low-level vtable hook handle. The caller is responsible for ensuring
 /// the target object outlives this handle.
 ///
@@ -73,12 +75,22 @@ impl RawHook {
         true
     }
 
-    /// Returns the original (pre-hook) vtable entry at `index`.
+    /// Returns the original function pointer at `index` as a raw pointer.
+    ///
+    /// # Panics
+    /// If `index` is out of bounds.
+    pub fn original(&self, index: usize) -> *const c_void {
+        let methods = unsafe { self.original_vtable.as_slice() };
+        methods[index] as *const c_void
+    }
+
+    /// Returns the original function pointer at `index` cast to type `F`.
     ///
     /// # Safety
-    /// `index` must be within bounds of the original vtable.
-    pub unsafe fn get_original(&self, index: usize) -> Option<crate::Method> {
-        unsafe { self.original_vtable.as_slice() }.get(index).copied()
+    /// `F` must be a pointer-sized type (e.g., a function pointer).
+    pub unsafe fn original_fn<F>(&self, index: usize) -> F {
+        let ptr = self.original(index);
+        unsafe { std::mem::transmute_copy::<*const c_void, F>(&ptr) }
     }
 
     /// One-shot: replace method at `index` and enable the hook.
