@@ -1,3 +1,5 @@
+use std::ffi::c_void;
+
 #[derive(Debug)]
 #[repr(C)]
 pub struct CppClass {
@@ -62,7 +64,7 @@ fn main() {
                 (unaffected_cpp_class.vtable.read().bar)(&unaffected_cpp_class as *const _),
             );
 
-            hook.replace_method(1, bar_hooked as vtable_hook::Method);
+            hook.replace_method(1, bar_hooked as *const c_void);
             hook.enable();
 
             eprintln!("-- Hook is enabled -- ");

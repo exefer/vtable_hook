@@ -12,7 +12,7 @@ use std::ffi::c_void;
 pub struct RawHook {
     struct_vtable_field_ptr: *mut crate::RawVTable,
     original_vtable: crate::VTable,
-    patched_vtable: Vec<crate::Method>,
+    patched_vtable: Vec<*const c_void>,
 }
 
 impl RawHook {
@@ -81,7 +81,7 @@ impl RawHook {
     /// If `index` is out of bounds.
     pub fn original(&self, index: usize) -> *const c_void {
         let methods = unsafe { self.original_vtable.as_slice() };
-        methods[index] as *const c_void
+        methods[index]
     }
 
     /// Returns the original function pointer at `index` cast to type `F`.
@@ -98,7 +98,7 @@ impl RawHook {
     /// # Safety
     /// `index` must be within bounds of the vtable.
     /// `hook_fn` must match the calling convention of the original method.
-    pub unsafe fn hook(&mut self, index: usize, hook_fn: crate::Method) {
+    pub unsafe fn hook(&mut self, index: usize, hook_fn: *const c_void) {
         unsafe { self.replace_method(index, hook_fn) };
         unsafe { self.enable() };
     }
@@ -122,7 +122,7 @@ impl RawHook {
 
     /// # Safety
     /// `index` must be within bounds of the original vtable.
-    pub unsafe fn replace_method(&mut self, index: usize, hook_fn: crate::Method) {
+    pub unsafe fn replace_method(&mut self, index: usize, hook_fn: *const c_void) {
         self.patched_vtable[index] = hook_fn;
     }
 

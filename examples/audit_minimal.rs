@@ -3,7 +3,7 @@
 
 use std::ffi::c_void;
 use std::sync::OnceLock;
-use vtable_hook::{RawVTable, Method, hook::copy::raw::RawHook};
+use vtable_hook::{RawVTable, hook::copy::raw::RawHook};
 
 type VirtualFn = unsafe extern "C" fn(this: *mut c_void) -> i32;
 
@@ -50,7 +50,7 @@ fn main() {
         ORIG.set(hook.original_fn::<VirtualFn>(0)).ok();
 
         // hook() = replace_method + enable in one call
-        hook.hook(0, my_hook as Method);
+        hook.hook(0, my_hook as *const c_void);
 
         eprintln!("after:  {}", call_slot(0));
 

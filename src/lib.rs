@@ -4,15 +4,16 @@
 //! - `Hook<T>` - lifetime-safe, auto-disables on drop.
 //! - `RawHook` - raw pointer based, caller manages safety.
 
+use std::ffi::c_void;
+
 pub mod hook;
 
 /// Pointer to the first entry of a vtable array.
 ///
-/// Dereferencing yields a `Method`. The vtable may be null-terminated
-/// (zero entry marks the end) or have a known fixed size.
-pub type RawVTable = *const Method;
-/// Opaque function pointer. Cast via `transmute` to the real signature.
-pub type Method = *const ();
+/// Dereferencing yields a function pointer (`*const c_void`).
+/// The vtable may be null-terminated (zero entry marks the end)
+/// or have a known fixed size.
+pub type RawVTable = *const *const c_void;
 
 #[derive(Debug, Clone)]
 /// A vtable snapshot: a pointer to its first entry and the entry count.
@@ -50,7 +51,7 @@ impl VTable {
 
     /// # Safety
     /// The vtable must be valid for `self.size` entries.
-    pub unsafe fn as_slice(&self) -> &[Method] {
+    pub unsafe fn as_slice(&self) -> &[*const c_void] {
         unsafe { std::slice::from_raw_parts(self.begin, self.size) }
     }
 }
