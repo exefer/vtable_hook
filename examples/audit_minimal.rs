@@ -7,6 +7,8 @@ use vtable_hook::{RawVTable, hook::copy::raw::RawHook};
 
 type VirtualFn = unsafe extern "C" fn(this: *mut c_void) -> i32;
 
+// Real C++ vtables are null-terminated (Itanium ABI).
+// Here the null sentinel happens to be adjacent zeroed memory.
 static VTABLE: [VirtualFn; 2] = [original_fn, null_fn];
 
 unsafe extern "C" fn original_fn(_this: *mut c_void) -> i32 { 0 }

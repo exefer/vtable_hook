@@ -1,93 +1,47 @@
 use std::ffi::c_void;
+use vtable_hook::hook::copy::raw::RawHook;
+
+type VirtualFn = unsafe extern "system" fn(thisptr: *mut CppClass) -> i32;
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct CppClass {
-    pub vtable: *const CppClassVTable,
-}
-
-impl Default for CppClass {
-    fn default() -> Self {
-        static VTABLE: CppClassVTable = CppClassVTable { foo: foo_original };
-
-        Self { vtable: &VTABLE }
-    }
+struct CppClass {
+    vtable: *const VirtualFn,
 }
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct CppClassVTable {
-    pub foo: unsafe extern "system" fn(thisptr: *const CppClass) -> std::os::raw::c_int,
+struct CppClassVTable {
+    foo: VirtualFn,
 }
 
-unsafe extern "system" fn foo_original(_thisptr: *const CppClass) -> std::os::raw::c_int {
-    0
-}
+static VTABLE: CppClassVTable = CppClassVTable { foo: foo_original };
 
-unsafe extern "system" fn foo_hooked(_thisptr: *const CppClass) -> std::os::raw::c_int {
-    1
-}
+unsafe extern "system" fn foo_original(_: *mut CppClass) -> i32 { 0 }
+unsafe extern "system" fn foo_hooked(_: *mut CppClass) -> i32 { 1 }
 
 fn main() {
     unsafe {
-        let mut victim_cpp_class = CppClass::default();
-        let unaffected_cpp_class = CppClass::default();
+        let mut victim = CppClass { vtable: &VTABLE.foo };
+        let unaffected = CppClass { vtable: &VTABLE.foo };
 
-        let original_vtable = vtable_hook::VTable::new_with_size(
-            victim_cpp_class.vtable as vtable_hook::RawVTable,
-            1,
-        );
-        let mut raw_hook = vtable_hook::hook::copy::raw::RawHook::new(
-            &mut victim_cpp_class.vtable as *mut _ as *mut vtable_hook::RawVTable,
-            Some(original_vtable),
-        );
-        eprintln!("Raw hook: {raw_hook:#?}");
+        let vtable = vtable_hook::VTable::new_with_size(&VTABLE as *const _ as *const *const c_void, 1);
+        let vptr_field: *mut *const c_void = &raw mut victim.vtable as *mut *const c_void;
+        let mut hook = RawHook::new(vptr_field as *mut vtable_hook::RawVTable, Some(vtable));
+        eprintln!("hook: {hook:#?}");
 
-        eprintln!("-- Hook is disabled -- ");
-        eprintln!(
-            "victim_cpp_class's raw_hook is_enabled {}",
-            raw_hook.is_enabled(),
-        );
-        eprintln!(
-            "victim_cpp_class foo() result = {}",
-            (victim_cpp_class.vtable.read().foo)(&victim_cpp_class as *const _),
-        );
-        eprintln!(
-            "unaffected_cpp_class foo() result = {}",
-            (unaffected_cpp_class.vtable.read().foo)(&unaffected_cpp_class as *const _),
-        );
+        let call = |c: &CppClass| -> i32 {
+            let f = std::mem::transmute::<*const c_void, VirtualFn>(*c.vtable as *const c_void);
+            f(c as *const _ as *mut _)
+        };
 
-        raw_hook.replace_method(0, foo_hooked as *const c_void);
-        raw_hook.enable();
+        eprintln!("disabled: victim={} unaffected={}", call(&victim), call(&unaffected));
 
-        eprintln!("-- Hook is enabled -- ");
-        eprintln!(
-            "victim_cpp_class's raw_hook is_enabled {}",
-            raw_hook.is_enabled(),
-        );
-        eprintln!(
-            "victim_cpp_class foo() result = {}",
-            (victim_cpp_class.vtable.read().foo)(&victim_cpp_class as *const _),
-        );
-        eprintln!(
-            "unaffected_cpp_class foo() result = {}",
-            (unaffected_cpp_class.vtable.read().foo)(&unaffected_cpp_class as *const _),
-        );
+        hook.hook(0, foo_hooked as *const c_void);
 
-        raw_hook.disable();
+        eprintln!("enabled:  victim={} unaffected={}", call(&victim), call(&unaffected));
 
-        eprintln!("-- Hook is disabled -- ");
-        eprintln!(
-            "victim_cpp_class's raw_hook is_enabled {}",
-            raw_hook.is_enabled(),
-        );
-        eprintln!(
-            "victim_cpp_class foo() result = {}",
-            (victim_cpp_class.vtable.read().foo)(&victim_cpp_class as *const _),
-        );
-        eprintln!(
-            "unaffected_cpp_class foo() result = {}",
-            (unaffected_cpp_class.vtable.read().foo)(&unaffected_cpp_class as *const _),
-        );
+        hook.reset();
+        eprintln!("reset:    victim={} unaffected={}", call(&victim), call(&unaffected));
     }
 }
