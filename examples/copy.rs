@@ -1,6 +1,6 @@
 use std::ffi::c_void;
 
-use vtable_hook::hook::copy::Hook;
+use vtable_hook::Hook;
 
 type VirtualFn = unsafe extern "system" fn(thisptr: *const CppClass) -> i32;
 

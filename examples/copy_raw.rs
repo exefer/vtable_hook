@@ -1,6 +1,6 @@
 use std::ffi::c_void;
 
-use vtable_hook::hook::copy::raw::RawHook;
+use vtable_hook::{RawHook, RawVTable, VTable};
 
 type VirtualFn = unsafe extern "system" fn(thisptr: *mut CppClass) -> i32;
 
@@ -34,10 +34,9 @@ fn main() {
             vtable: &VTABLE.foo,
         };
 
-        let vtable =
-            vtable_hook::VTable::new_with_size(&VTABLE as *const _ as *const *const c_void, 1);
+        let vtable = VTable::new_with_size(&VTABLE as *const _ as *const *const c_void, 1);
         let vptr_field: *mut *const c_void = &raw mut victim.vtable as *mut *const c_void;
-        let mut hook = RawHook::new(vptr_field as *mut vtable_hook::RawVTable, Some(vtable));
+        let mut hook = RawHook::new(vptr_field as *mut RawVTable, Some(vtable));
         eprintln!("hook: {hook:#?}");
 
         let call = |c: &CppClass| -> i32 {

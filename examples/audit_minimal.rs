@@ -4,7 +4,7 @@
 use std::ffi::c_void;
 use std::sync::OnceLock;
 
-use vtable_hook::{RawVTable, hook::copy::raw::RawHook};
+use vtable_hook::{RawHook, RawVTable};
 
 type VirtualFn = unsafe extern "C" fn(this: *mut c_void) -> i32;
 
