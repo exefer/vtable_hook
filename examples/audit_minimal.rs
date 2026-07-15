@@ -33,39 +33,37 @@ fn make_object() -> Box<Object> {
 }
 
 unsafe extern "C" fn my_hook(this: *mut c_void) -> i32 {
-    unsafe {
-        eprintln!("[hook] intercepted call on obj={this:p}");
-        ORIG.get().unwrap()(this)
-    }
+    eprintln!("[hook] intercepted call on obj={this:p}");
+    unsafe { ORIG.get().unwrap()(this) }
 }
 
 static ORIG: OnceLock<VirtualFn> = OnceLock::new();
 
 fn main() {
-    unsafe {
-        let mut obj = make_object();
-        let obj_ptr = &raw mut *obj as *mut c_void;
+    let mut obj = make_object();
+    let obj_ptr = &raw mut *obj as *mut c_void;
 
-        let call_slot = |idx: usize| -> i32 {
+    let call_slot = |index: usize| -> i32 {
+        unsafe {
             let vtable_ptr = obj.vptr as *const VirtualFn;
-            let f = *vtable_ptr.add(idx);
+            let f = *vtable_ptr.add(index);
             f(obj_ptr)
-        };
+        }
+    };
 
-        eprintln!("before: {}", call_slot(0));
+    eprintln!("before: {}", call_slot(0));
 
-        let vptr_field = obj_ptr as *mut RawVTable;
-        let mut hook = RawHook::new(vptr_field, None);
+    let vptr_field = obj_ptr as *mut RawVTable;
+    let mut hook = unsafe { RawHook::new(vptr_field, None) };
 
-        ORIG.set(hook.original_fn::<VirtualFn>(0)).ok();
+    ORIG.set(unsafe { hook.original_fn::<VirtualFn>(0) }).ok();
 
-        // hook() = replace_method + enable in one call
-        hook.hook(0, my_hook as *const c_void);
+    // hook() = replace_method + enable in one call
+    unsafe { hook.hook(0, my_hook as *const c_void) };
 
-        eprintln!("after: {}", call_slot(0));
+    eprintln!("after: {}", call_slot(0));
 
-        // reset() = restore_all + disable in one call
-        hook.reset();
-        eprintln!("after reset: {}", call_slot(0));
-    }
+    // reset() = restore_all + disable in one call
+    unsafe { hook.reset() };
+    eprintln!("after reset: {}", call_slot(0));
 }

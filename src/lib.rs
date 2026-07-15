@@ -81,10 +81,8 @@ impl RawHook {
         struct_vtable_field_ptr: *mut RawVTable,
         original_vtable: Option<VTable>,
     ) -> Self {
-        let original_vtable = match original_vtable {
-            Some(some) => some,
-            None => unsafe { VTable::new(struct_vtable_field_ptr.read_unaligned()) },
-        };
+        let original_vtable = original_vtable
+            .unwrap_or_else(|| unsafe { VTable::new(struct_vtable_field_ptr.read_unaligned()) });
 
         let patched_vtable = unsafe { original_vtable.as_slice() }.to_vec();
 
@@ -111,8 +109,8 @@ impl RawHook {
 
         unsafe {
             self.struct_vtable_field_ptr
-                .replace(self.patched_vtable.as_ptr());
-        }
+                .replace(self.patched_vtable.as_ptr())
+        };
 
         true
     }
@@ -126,8 +124,8 @@ impl RawHook {
 
         unsafe {
             self.struct_vtable_field_ptr
-                .replace(self.original_vtable.begin);
-        }
+                .replace(self.original_vtable.begin)
+        };
 
         true
     }
@@ -197,7 +195,6 @@ impl RawHook {
             let Some(original_method) = original_methods.get(index) else {
                 continue;
             };
-
             *item = *original_method;
         }
     }
@@ -223,15 +220,13 @@ impl<'a, T> Hook<'a, T> {
         vtable_offset: Option<usize>,
         methods_count: Option<usize>,
     ) -> Self {
-        let item_ptr = item as *mut _ as *mut usize;
+        let item_ptr = &raw mut *item as *mut usize;
 
         let vtable_offset = vtable_offset.unwrap_or(0);
         let struct_vtable_field_ptr = unsafe { item_ptr.add(vtable_offset) } as *mut RawVTable;
         let vtable = unsafe { struct_vtable_field_ptr.read_unaligned() };
-        let vtable_size = match methods_count {
-            Some(n) => n,
-            None => unsafe { VTable::count_methods_raw(vtable) },
-        };
+        let vtable_size =
+            methods_count.unwrap_or_else(|| unsafe { VTable::count_methods_raw(vtable) });
         let original_vtable = unsafe { VTable::new_with_size(vtable, vtable_size) };
 
         let raw = unsafe { RawHook::new(struct_vtable_field_ptr, Some(original_vtable)) };

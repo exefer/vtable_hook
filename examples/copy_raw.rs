@@ -4,13 +4,12 @@ use vtable_hook::{RawHook, RawVTable, VTable};
 
 type VirtualFn = unsafe extern "system" fn(thisptr: *mut CppClass) -> i32;
 
-#[derive(Debug)]
 #[repr(C)]
+#[derive(Debug)]
 struct CppClass {
     vtable: *const VirtualFn,
 }
 
-#[derive(Debug)]
 #[repr(C)]
 struct CppClassVTable {
     foo: VirtualFn,
@@ -35,7 +34,7 @@ fn main() {
         };
 
         let vtable = VTable::new_with_size(&VTABLE as *const _ as *const *const c_void, 1);
-        let vptr_field: *mut *const c_void = &raw mut victim.vtable as *mut *const c_void;
+        let vptr_field = &raw mut victim.vtable as *mut *const c_void;
         let mut hook = RawHook::new(vptr_field as *mut RawVTable, Some(vtable));
         eprintln!("hook: {hook:#?}");
 

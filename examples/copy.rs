@@ -4,13 +4,12 @@ use vtable_hook::Hook;
 
 type VirtualFn = unsafe extern "system" fn(thisptr: *const CppClass) -> i32;
 
-#[derive(Debug)]
 #[repr(C)]
+#[derive(Debug)]
 struct CppClass {
     vtable: *const CppClassVTable,
 }
 
-#[derive(Debug)]
 #[repr(C)]
 struct CppClassVTable {
     foo: VirtualFn,
