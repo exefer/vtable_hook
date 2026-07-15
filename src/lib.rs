@@ -4,9 +4,9 @@
 //! - `Hook<T>` - lifetime-safe, auto-disables on drop.
 //! - `RawHook` - raw pointer based, caller manages safety.
 
-use std::ffi::c_void;
-
 pub mod hook;
+
+use std::ffi::c_void;
 
 /// Pointer to the first entry of a vtable array.
 ///
@@ -15,11 +15,11 @@ pub mod hook;
 /// or have a known fixed size.
 pub type RawVTable = *const *const c_void;
 
-#[derive(Debug, Clone)]
 /// A vtable snapshot: a pointer to its first entry and the entry count.
 ///
 /// Created from a `RawVTable` either by counting null-terminated entries
 /// (`new`) or by supplying an explicit size (`new_with_size`).
+#[derive(Debug, Clone)]
 pub struct VTable {
     pub begin: RawVTable,
     pub size: usize,
@@ -35,7 +35,10 @@ impl VTable {
     /// # Safety
     /// `vtable` must point to at least `size` readable entries.
     pub unsafe fn new_with_size(vtable: RawVTable, size: usize) -> Self {
-        Self { begin: vtable, size }
+        Self {
+            begin: vtable,
+            size,
+        }
     }
 
     /// # Safety

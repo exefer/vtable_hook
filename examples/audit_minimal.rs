@@ -3,6 +3,7 @@
 
 use std::ffi::c_void;
 use std::sync::OnceLock;
+
 use vtable_hook::{RawVTable, hook::copy::raw::RawHook};
 
 type VirtualFn = unsafe extern "C" fn(this: *mut c_void) -> i32;
@@ -11,8 +12,12 @@ type VirtualFn = unsafe extern "C" fn(this: *mut c_void) -> i32;
 // Here the null sentinel happens to be adjacent zeroed memory.
 static VTABLE: [VirtualFn; 2] = [original_fn, null_fn];
 
-unsafe extern "C" fn original_fn(_this: *mut c_void) -> i32 { 0 }
-unsafe extern "C" fn null_fn(_this: *mut c_void) -> i32 { 0 }
+unsafe extern "C" fn original_fn(_this: *mut c_void) -> i32 {
+    0
+}
+unsafe extern "C" fn null_fn(_this: *mut c_void) -> i32 {
+    0
+}
 
 #[repr(C)]
 struct Object {
@@ -21,7 +26,10 @@ struct Object {
 }
 
 fn make_object() -> Box<Object> {
-    Box::new(Object { vptr: &VTABLE, _value: 42 })
+    Box::new(Object {
+        vptr: &VTABLE,
+        _value: 42,
+    })
 }
 
 unsafe extern "C" fn my_hook(this: *mut c_void) -> i32 {
@@ -54,7 +62,7 @@ fn main() {
         // hook() = replace_method + enable in one call
         hook.hook(0, my_hook as *const c_void);
 
-        eprintln!("after:  {}", call_slot(0));
+        eprintln!("after: {}", call_slot(0));
 
         // reset() = restore_all + disable in one call
         hook.reset();

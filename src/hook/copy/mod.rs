@@ -1,5 +1,3 @@
-use std::ffi::c_void;
-
 /// Copy-based vtable hooking: clone the target vtable, patch the clone,
 /// then swap the object's vptr to point at the patched copy.
 ///
@@ -7,11 +5,13 @@ use std::ffi::c_void;
 /// a lifetime-safe `Hook<T>` that auto-disables on drop.
 pub mod raw;
 
-#[derive(Debug)]
+use std::ffi::c_void;
+
 /// A vtable hook tied to a specific object's lifetime.
 ///
 /// Automatically disables the hook (restores the original vptr) when
 /// `Hook` is dropped. Methods delegate to the inner `RawHook`.
+#[derive(Debug)]
 pub struct Hook<'a, T> {
     pub item: &'a mut T,
     raw: raw::RawHook,

@@ -1,4 +1,5 @@
 use std::ffi::c_void;
+
 use vtable_hook::hook::copy::raw::RawHook;
 
 type VirtualFn = unsafe extern "system" fn(thisptr: *mut CppClass) -> i32;
@@ -17,15 +18,24 @@ struct CppClassVTable {
 
 static VTABLE: CppClassVTable = CppClassVTable { foo: foo_original };
 
-unsafe extern "system" fn foo_original(_: *mut CppClass) -> i32 { 0 }
-unsafe extern "system" fn foo_hooked(_: *mut CppClass) -> i32 { 1 }
+unsafe extern "system" fn foo_original(_: *mut CppClass) -> i32 {
+    0
+}
+unsafe extern "system" fn foo_hooked(_: *mut CppClass) -> i32 {
+    1
+}
 
 fn main() {
     unsafe {
-        let mut victim = CppClass { vtable: &VTABLE.foo };
-        let unaffected = CppClass { vtable: &VTABLE.foo };
+        let mut victim = CppClass {
+            vtable: &VTABLE.foo,
+        };
+        let unaffected = CppClass {
+            vtable: &VTABLE.foo,
+        };
 
-        let vtable = vtable_hook::VTable::new_with_size(&VTABLE as *const _ as *const *const c_void, 1);
+        let vtable =
+            vtable_hook::VTable::new_with_size(&VTABLE as *const _ as *const *const c_void, 1);
         let vptr_field: *mut *const c_void = &raw mut victim.vtable as *mut *const c_void;
         let mut hook = RawHook::new(vptr_field as *mut vtable_hook::RawVTable, Some(vtable));
         eprintln!("hook: {hook:#?}");
@@ -35,13 +45,25 @@ fn main() {
             f(c as *const _ as *mut _)
         };
 
-        eprintln!("disabled: victim={} unaffected={}", call(&victim), call(&unaffected));
+        eprintln!(
+            "disabled: victim={} unaffected={}",
+            call(&victim),
+            call(&unaffected)
+        );
 
         hook.hook(0, foo_hooked as *const c_void);
 
-        eprintln!("enabled:  victim={} unaffected={}", call(&victim), call(&unaffected));
+        eprintln!(
+            "enabled: victim={} unaffected={}",
+            call(&victim),
+            call(&unaffected)
+        );
 
         hook.reset();
-        eprintln!("reset:    victim={} unaffected={}", call(&victim), call(&unaffected));
+        eprintln!(
+            "reset: victim={} unaffected={}",
+            call(&victim),
+            call(&unaffected)
+        );
     }
 }
