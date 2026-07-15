@@ -99,7 +99,7 @@ impl RawHook {
     /// `index` must be within bounds of the vtable.
     /// `hook_fn` must match the calling convention of the original method.
     pub unsafe fn hook(&mut self, index: usize, hook_fn: *const c_void) {
-        unsafe { self.replace_method(index, hook_fn) };
+        self.replace_method(index, hook_fn);
         unsafe { self.enable() };
     }
 
@@ -120,9 +120,9 @@ impl RawHook {
         unsafe { self.disable() };
     }
 
-    /// # Safety
-    /// `index` must be within bounds of the original vtable.
-    pub unsafe fn replace_method(&mut self, index: usize, hook_fn: *const c_void) {
+    /// # Panics
+    /// If `index` is out of bounds.
+    pub fn replace_method(&mut self, index: usize, hook_fn: *const c_void) {
         self.patched_vtable[index] = hook_fn;
     }
 

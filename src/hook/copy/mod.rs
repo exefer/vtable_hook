@@ -43,9 +43,7 @@ impl<'a, T> Hook<'a, T> {
         Self { item, raw }
     }
 
-    /// # Safety
-    /// The underlying object must still be alive.
-    pub unsafe fn is_enabled(&self) -> bool {
+    pub fn is_enabled(&self) -> bool {
         unsafe { self.raw.is_enabled() }
     }
 
@@ -80,9 +78,9 @@ impl<'a, T> Hook<'a, T> {
         unsafe { self.raw.hook(index, hook_fn) }
     }
 
-    /// # Safety
-    /// `index` must be within the vtable bounds.
-    pub unsafe fn unhook(&mut self, index: usize) {
+    /// # Panics
+    /// If `index` is out of bounds.
+    pub fn unhook(&mut self, index: usize) {
         unsafe { self.raw.unhook(index) }
     }
 
@@ -92,21 +90,19 @@ impl<'a, T> Hook<'a, T> {
         unsafe { self.raw.reset() }
     }
 
-    /// # Safety
-    /// `index` must be within the vtable bounds.
-    pub unsafe fn replace_method(&mut self, index: usize, hook_fn: *const c_void) {
-        unsafe { self.raw.replace_method(index, hook_fn) }
+    /// # Panics
+    /// If `index` is out of bounds.
+    pub fn replace_method(&mut self, index: usize, hook_fn: *const c_void) {
+        self.raw.replace_method(index, hook_fn)
     }
 
-    /// # Safety
-    /// `index` must be within the vtable bounds.
-    pub unsafe fn restore_method(&mut self, index: usize) {
+    /// # Panics
+    /// If `index` is out of bounds.
+    pub fn restore_method(&mut self, index: usize) {
         unsafe { self.raw.restore_method(index) }
     }
 
-    /// # Safety
-    /// The original vtable must still be accessible.
-    pub unsafe fn restore_all(&mut self) {
+    pub fn restore_all(&mut self) {
         unsafe { self.raw.restore_all() }
     }
 }
